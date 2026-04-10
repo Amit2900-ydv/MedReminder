@@ -1,8 +1,8 @@
 
   
-# 🤖 AdherAI – AI Powered Smart Medication Assistant
+# 🤖 MedReminder – AI Powered Smart Medication Assistant
 
-AdherAI is an AI-powered smart medication management application designed to improve medicine adherence through intelligent tracking, voice interaction, and chatbot assistance.
+MedReminder is an AI-powered smart medication management application designed to improve medicine adherence through intelligent tracking, voice interaction, and chatbot assistance.
 
 ---
 
