@@ -1,6 +1,6 @@
 // Service Worker for background notifications and PWA support
 
-const CACHE_NAME = 'adherai-v1';
+const CACHE_NAME = 'medreminder-v1';
 const urlsToCache = [
   '/',
   '/index.html',
@@ -48,7 +48,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
   
-  const title = data.title || 'AdherAI Reminder';
+  const title = data.title || 'MedReminder';
   const options = {
     body: data.body || 'Time to take your medication',
     icon: data.icon || '/notification-icon.png',

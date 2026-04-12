@@ -150,7 +150,7 @@ export function LoginScreen() {
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
-                                onClick={() => handleDemoFill('caretaker@test.com', 'password123')}
+                                onClick={() => handleDemoFill('caretaker@demo.com', 'demo123')}
                                 className="bg-purple-50 border border-purple-100 rounded-xl p-3 text-xs text-purple-700 overflow-hidden cursor-pointer active:scale-95 transition-transform"
                             >
                                 <div className="flex items-center gap-2 font-bold mb-1">
@@ -158,8 +158,8 @@ export function LoginScreen() {
                                     {t('login.demo_caretaker')}
                                 </div>
                                 <div className="flex justify-between">
-                                    <span>{t('login.email_label')}: <span className="font-mono">caretaker@test.com</span></span>
-                                    <span>Pass: <span className="font-mono">password123</span></span>
+                                    <span>{t('login.email_label')}: <span className="font-mono">caretaker@demo.com</span></span>
+                                    <span>Pass: <span className="font-mono">demo123</span></span>
                                 </div>
                             </motion.div>
                         )}
@@ -169,7 +169,7 @@ export function LoginScreen() {
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
-                                onClick={() => handleDemoFill('test@test.com', 'password123')}
+                                onClick={() => handleDemoFill('patient@demo.com', 'patient123')}
                                 className="bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700 overflow-hidden cursor-pointer active:scale-95 transition-transform"
                             >
                                 <div className="flex items-center gap-2 font-bold mb-1">
@@ -177,8 +177,8 @@ export function LoginScreen() {
                                     {t('login.demo_patient')}
                                 </div>
                                 <div className="flex justify-between">
-                                    <span>{t('login.email_label')}: <span className="font-mono">test@test.com</span></span>
-                                    <span>Pass: <span className="font-mono">password123</span></span>
+                                    <span>{t('login.email_label')}: <span className="font-mono">patient@demo.com</span></span>
+                                    <span>Pass: <span className="font-mono">patient123</span></span>
                                 </div>
                             </motion.div>
                         )}

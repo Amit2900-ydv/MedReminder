@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
     Bell,
@@ -35,6 +35,8 @@ export function HomeScreen({ onNavigate, onSelectMedication, onOpenChat }: HomeS
 
     const [showNotification, setShowNotification] = useState(true);
     const [isTaken, setIsTaken] = useState(false);
+    const [coachSummary, setCoachSummary] = useState<string | null>(null);
+    const [loadingCoach, setLoadingCoach] = useState(false);
 
     // Get current patient data from context
     const currentPatient = patients.find(p => p.id === user?.patientId) || patients[0];
@@ -179,6 +181,32 @@ export function HomeScreen({ onNavigate, onSelectMedication, onOpenChat }: HomeS
     // Check if patient has ANY medications at all
     const hasMedications = currentPatient.medications.length > 0;
 
+    // Fetch AI Health Coach Summary
+    useEffect(() => {
+        const fetchCoachSummary = async () => {
+            if (!user) return;
+            setLoadingCoach(true);
+            try {
+                const token = localStorage.getItem('adheai_token');
+                const res = await fetch('/api/ai/health-coach', {
+                    headers: {
+                        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                    }
+                });
+                const data = await res.json();
+                if (data.coachSummary) {
+                    setCoachSummary(data.coachSummary);
+                }
+            } catch (err) {
+                console.error('Failed to fetch AI coach summary');
+            } finally {
+                setLoadingCoach(false);
+            }
+        };
+
+        fetchCoachSummary();
+    }, [user, currentPatient.logs.length]); // Refresh when logs change
+
     return (
         <div className="pb-10 px-4 pt-6 bg-gray-50 min-h-full">
             {/* Header */}
@@ -198,6 +226,34 @@ export function HomeScreen({ onNavigate, onSelectMedication, onOpenChat }: HomeS
                     )}
                 </button>
             </div>
+
+            {/* High Risk Alert Banner */}
+            <AnimatePresence>
+                {todayStatus.missed > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0, mb: 0 }}
+                        animate={{ opacity: 1, height: 'auto', mb: 32 }}
+                        exit={{ opacity: 0, height: 0, mb: 0 }}
+                        className="bg-red-50 border-l-4 border-red-600 p-4 rounded-r-2xl shadow-sm cursor-pointer relative overflow-hidden"
+                        onClick={() => onNavigate('logs')}
+                    >
+                        {/* Pulse effect background */}
+                        <div className="absolute inset-0 bg-red-600/5 animate-pulse" />
+                        
+                        <div className="flex items-start relative z-10 text-left">
+                            <div className="flex-shrink-0 bg-red-100 p-2 rounded-full">
+                                <AlertCircle className="h-6 w-6 text-red-600" />
+                            </div>
+                            <div className="ml-4">
+                                <h3 className="text-sm font-black text-red-800 uppercase tracking-wide">Health Risk Alert</h3>
+                                <div className="mt-1 text-xs text-red-700 font-medium">
+                                    <p>You have <strong className="text-red-900 text-sm">{todayStatus.missed}</strong> missed medication{todayStatus.missed > 1 ? 's' : ''} today. Missing doses increases your health risk. Please take action immediately or consult your doctor.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Smart Notification Card */}
             <AnimatePresence mode="wait">
@@ -420,20 +476,32 @@ export function HomeScreen({ onNavigate, onSelectMedication, onOpenChat }: HomeS
                 </motion.div>
             </div >
 
-            {/* AI Insight Overlay */}
-            < motion.div
+            {/* AI Insight Overlay - Now Dynamic Health Coach */}
+            <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
                 onClick={() => onNavigate('ai-dashboard')}
-                className="bg-purple-50 border border-purple-100 rounded-3xl p-5 mb-8 flex gap-4 items-center cursor-pointer active:scale-[0.98] transition-all"
+                className="bg-gradient-to-br from-purple-50 to-blue-50 border border-purple-100 rounded-3xl p-6 mb-8 flex gap-5 items-start cursor-pointer active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
             >
-                <div className="w-12 h-12 rounded-2xl bg-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-200">
-                    <Brain className="w-6 h-6 text-white" />
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-200">
+                    <Brain className="w-7 h-7 text-white" />
                 </div>
                 <div className="flex-1">
-                    <h4 className="text-sm font-bold text-purple-900">{t('ai.insights')}</h4>
-                    <p className="text-xs text-purple-700 mt-1">Taking Metformin with breakfast helps reduce stomach upset. Keep it up!</p>
+                    <div className="flex items-center justify-between mb-1">
+                        <h4 className="text-sm font-bold text-purple-900">{t('ai.insights')}</h4>
+                        <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full uppercase tracking-tighter">AI Coach</span>
+                    </div>
+                    {loadingCoach ? (
+                        <div className="space-y-2">
+                            <div className="w-full h-3 bg-purple-100 animate-pulse rounded-full" />
+                            <div className="w-2/3 h-3 bg-purple-100 animate-pulse rounded-full" />
+                        </div>
+                    ) : (
+                        <p className="text-xs text-purple-800 leading-relaxed font-medium italic">
+                            {coachSummary || "Hello! I'm analyzing your health patterns. Log your meds to see personalized insights here."}
+                        </p>
+                    )}
                 </div>
             </motion.div >
 

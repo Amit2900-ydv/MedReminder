@@ -1,5 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, users as initialUsers } from '@/app/data/mockData';
+import { authApi } from '@/services/api';
+
+// Re-export the User type that the rest of the app uses
+export interface User {
+    id: string;
+    email: string;
+    type: 'patient' | 'caretaker';
+    patientId?: string;
+    caretakerId?: string;
+    name?: string;
+}
 
 interface AuthContextType {
     user: User | null;
@@ -21,103 +31,124 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const saved = localStorage.getItem('voice_enabled');
             return saved !== null ? JSON.parse(saved) : true;
-        } catch (e) {
+        } catch {
             return true;
         }
     });
-    const [registeredUsers, setRegisteredUsers] = useState<User[]>(() => {
-        try {
-            const saved = localStorage.getItem('registered_users');
-            const parsed = saved ? JSON.parse(saved) : null;
 
-            // Ensure we have an array, even if saved data is invalid
-            let merged = Array.isArray(parsed) ? [...parsed] : [...initialUsers];
-
-            // Always merge in initialUsers to ensure mock accounts exist and are UP TO DATE
-            // We prioritize initialUsers (demo accounts) by filtering out any existing ones with the same email
-            initialUsers.forEach((initUser: User) => {
-                merged = merged.filter(u => u.email.toLowerCase() !== initUser.email.toLowerCase());
-                merged.push(initUser);
-            });
-            return merged;
-        } catch (e) {
-            console.error('Failed to load users from localStorage', e);
-            return initialUsers;
-        }
-    });
-
-    // Save users to localStorage whenever they change
-    useEffect(() => {
-        localStorage.setItem('registered_users', JSON.stringify(registeredUsers));
-    }, [registeredUsers]);
-
-    // Save voice preference to localStorage
+    // Save voice preference
     useEffect(() => {
         localStorage.setItem('voice_enabled', JSON.stringify(voiceEnabled));
     }, [voiceEnabled]);
 
-    // Check for active session on load - DISABLED to force login on start
+    // Restore session from stored token on mount
     useEffect(() => {
-        setIsLoading(false);
+        const restoreSession = async () => {
+            const token = localStorage.getItem('adheai_token');
+            if (!token) {
+                setIsLoading(false);
+                return;
+            }
+            try {
+                const data = await authApi.me();
+                const u = data.user;
+                setUser({
+                    id: u._id || u.id,
+                    email: u.email,
+                    type: u.type,
+                    patientId: u.patientId,
+                    caretakerId: u.caretakerId,
+                    name: u.name
+                });
+            } catch {
+                localStorage.removeItem('adheai_token');
+                localStorage.removeItem('adheai_user');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        restoreSession();
     }, []);
 
     const login = async (email: string, password: string) => {
-        const cleanEmail = email.trim();
-        const cleanPassword = password.trim();
-
-        // Find user in registered list - case-insensitive email
-        const foundUser = registeredUsers.find(
-            u => u.email.toLowerCase() === cleanEmail.toLowerCase() && u.password === cleanPassword
-        );
-
-        if (foundUser) {
-            setUser(foundUser);
-            // localStorage.setItem('active_session', JSON.stringify(foundUser)); // Removed to force login on start
+        try {
+            const data = await authApi.login(email.trim(), password.trim());
+            const u = data.user;
+            const mappedUser: User = {
+                id: u._id || u.id,
+                email: u.email,
+                type: u.type,
+                patientId: u.patientId,
+                caretakerId: u.caretakerId,
+                name: u.name
+            };
+            localStorage.setItem('adheai_token', data.token);
+            localStorage.setItem('adheai_user', JSON.stringify(mappedUser));
+            setUser(mappedUser);
             return { success: true };
+        } catch (err: any) {
+            let message = 'Invalid email or password';
+            const status = err?.response?.status;
+            
+            // If it's a 400 or 401, it's an actual authentication error from our backend.
+            if (status === 401 || status === 400) {
+                if (err?.response?.data?.error) {
+                    message = err.response.data.error;
+                }
+            } else {
+                // For 500, 502, 504 or Network Errors (no response), assume the backend is down.
+                message = 'Backend server is not running. Please run "npm run dev:all" instead of "npm run dev".';
+            }
+            return { success: false, message };
         }
-
-        return { success: false, message: 'Invalid email or password' };
     };
 
     const signup = async (email: string, password: string, name: string, type: 'patient' | 'caretaker') => {
-        // Check if email already exists - case-insensitive
-        if (registeredUsers.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-            return { success: false, message: 'Email already registered' };
+        try {
+            const data = await authApi.register({ email: email.trim(), password, name, type });
+            const u = data.user;
+            const mappedUser: User = {
+                id: u._id || u.id,
+                email: u.email,
+                type: u.type,
+                patientId: u.patientId,
+                caretakerId: u.caretakerId,
+                name: u.name
+            };
+            localStorage.setItem('adheai_token', data.token);
+            localStorage.setItem('adheai_user', JSON.stringify(mappedUser));
+            setUser(mappedUser);
+            return { success: true, user: mappedUser };
+        } catch (err: any) {
+            let message = 'Registration failed';
+            const status = err?.response?.status;
+            
+            if (status === 400 || status === 409) {
+                if (err?.response?.data?.error) {
+                    message = err.response.data.error;
+                }
+            } else {
+                message = 'Backend server is not running. Please run "npm run dev:all" instead of "npm run dev".';
+            }
+            return { success: false, message };
         }
-
-        const newUser: User = {
-            id: `u${Date.now()}`,
-            email,
-            password,
-            type,
-            // Create linked IDs immediately
-            ...(type === 'patient' ? { patientId: `p${Date.now()}` } : { caretakerId: `c${Date.now()}` })
-        };
-
-        setRegisteredUsers(prev => [...prev, newUser]);
-
-        // Auto-login after signup
-        setUser(newUser);
-        // localStorage.setItem('active_session', JSON.stringify(newUser)); // Removed to force login on start
-
-        return { success: true, user: newUser };
     };
 
     const logout = () => {
         setUser(null);
-        localStorage.removeItem('active_session');
+        localStorage.removeItem('adheai_token');
+        localStorage.removeItem('adheai_user');
     };
 
     const updateUser = (updates: Partial<User>) => {
         if (!user) return;
         const updatedUser = { ...user, ...updates };
         setUser(updatedUser);
-        // localStorage.setItem('active_session', JSON.stringify(updatedUser)); // Removed to force login on start
-
-        // Also update in registeredUsers if needed (for login consistency)
-        setRegisteredUsers(prev =>
-            prev.map(u => u.id === user.id ? updatedUser : u)
-        );
+        localStorage.setItem('adheai_user', JSON.stringify(updatedUser));
+        // Optionally persist to backend
+        if (updates.name || (updates as any).phone) {
+            authApi.updateMe({ name: updates.name, phone: (updates as any).phone }).catch(console.error);
+        }
     };
 
     return (
@@ -129,8 +160,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
     const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within AuthProvider');
-    }
+    if (!context) throw new Error('useAuth must be used within AuthProvider');
     return context;
 }

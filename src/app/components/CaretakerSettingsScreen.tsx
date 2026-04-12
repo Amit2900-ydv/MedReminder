@@ -172,7 +172,7 @@ export function CaretakerSettingsScreen({ caretaker, onLogout }: CaretakerSettin
             </motion.div>
 
             {/* App Version */}
-            <p className="text-center text-xs text-gray-400 mt-6">AdherAI v1.0.0</p>
+            <p className="text-center text-xs text-gray-400 mt-6">MedReminder v1.0.0</p>
         </div>
     );
 }

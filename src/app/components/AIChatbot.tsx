@@ -19,7 +19,7 @@ export function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     const [messages, setMessages] = useState<Message[]>([
         {
             id: '1',
-            text: "Hello! I'm your AdherAI assistant. How can I help you with your medications today?",
+            text: "Hello! I'm your MedReminder assistant. How can I help you with your medications today?",
             sender: 'ai',
             timestamp: new Date()
         }
@@ -34,41 +34,60 @@ export function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
         }
     }, [messages, isTyping]);
 
-    const handleSend = () => {
+    const handleSend = async () => {
         if (!inputValue.trim()) return;
+
+        const currentMessage = inputValue.trim();
 
         const userMsg: Message = {
             id: Date.now().toString(),
-            text: inputValue,
+            text: currentMessage,
             sender: 'user',
             timestamp: new Date()
         };
+
+        const currentHistory = [...messages];
 
         setMessages(prev => [...prev, userMsg]);
         setInputValue('');
         setIsTyping(true);
 
-        // Simulate AI response
-        setTimeout(() => {
-            const aiResponse = getAIResponse(inputValue);
-            const aiMsg: Message = {
+        try {
+            const token = localStorage.getItem('adheai_token');
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({
+                    message: currentMessage,
+                    history: currentHistory
+                })
+            });
+            
+            const data = await res.json();
+            
+            if (!res.ok) {
+                throw new Error(data.error || data.message || `Server error: ${res.status}`);
+            }
+            
+            setMessages(prev => [...prev, {
                 id: (Date.now() + 1).toString(),
-                text: aiResponse,
+                text: data.response || "Sorry, I couldn't generate a response.",
                 sender: 'ai',
                 timestamp: new Date()
-            };
-            setMessages(prev => [...prev, aiMsg]);
+            }]);
+        } catch (error: any) {
+            setMessages(prev => [...prev, {
+                id: (Date.now() + 1).toString(),
+                text: error.message || "Sorry, there was an error connecting to my AI core. Make sure the backend server is running.",
+                sender: 'ai',
+                timestamp: new Date()
+            }]);
+        } finally {
             setIsTyping(false);
-        }, 1500);
-    };
-
-    const getAIResponse = (query: string): string => {
-        const q = query.toLowerCase();
-        if (q.includes('metformin')) return "Metformin is used to control blood sugar. You should take it with meals to reduce stomach upset.";
-        if (q.includes('side effect')) return "Common side effects can include nausea or mild dizziness. If you feel severe pain, please contact your doctor immediately.";
-        if (q.includes('missed')) return "If you miss a dose, take it as soon as you remember. If it's almost time for your next dose, skip the missed one.";
-        if (q.includes('hi') || q.includes('hello')) return "Hello! How can I assist you with your health routine today?";
-        return "That's a great question. I'm specifically trained on your medication schedule and adherence. Is there something specific about your doses you'd like to know?";
+        }
     };
 
     return (
@@ -96,7 +115,7 @@ export function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                                     <Sparkles className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-lg">AdherAI Assistant</h3>
+                                    <h3 className="font-bold text-lg">MedReminder Assistant</h3>
                                     <p className="text-xs text-blue-100 flex items-center gap-1">
                                         <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
                                         Always online
@@ -186,7 +205,7 @@ export function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                                 </div>
                             </div>
                             <p className="text-[10px] text-gray-400 text-center mt-3">
-                                AdherAI can provide general info. Always consult your doctor.
+                                MedReminder can provide general info. Always consult your doctor.
                             </p>
                         </div>
                     </motion.div>

@@ -11,7 +11,7 @@ MedReminder is an AI-powered smart medication management application designed to
 Medication adherence is a major challenge in healthcare.  
 Patients often forget to take medicines on time, leading to health risks and reduced treatment effectiveness. Traditional reminder apps lack intelligence and personalization.
 
-AdherAI aims to solve this problem using Artificial Intelligence.
+MedReminder aims to solve this problem using Artificial Intelligence.
 
 ---
 
@@ -29,9 +29,9 @@ AdherAI aims to solve this problem using Artificial Intelligence.
 - Status tracking (Taken / Missed / Verified)
 
 ### 🤖 AI Chat Assistant
-- Interactive chatbot support
+- Interactive chatbot support (Google Gemini)
 - Medicine-related queries
-- Multi-language support
+- Multi-language support (English, Hindi, Hinglish, Marathi, Gujarati)
 - Voice greeting on startup
 
 ### 📊 Reports & Analytics
@@ -65,21 +65,10 @@ This helps users track consistency and improve medication discipline.
 
 ## 🛠 Tech Stack
 
-- React
-- TypeScript
-- Vite
-- Tailwind CSS
-- Web Speech API
-
----
-
-## 🔮 Future Enhancements
-
-- OpenAI API Integration
-- OCR-based medicine recognition
-- Cloud database integration
-- Caregiver monitoring system
-- Emergency alert feature
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS, Motion
+- **Backend:** Express, Node.js, MongoDB (Mongoose)
+- **AI:** Google Gemini AI API
+- **Voice:** Web Speech API
 
 ---
 

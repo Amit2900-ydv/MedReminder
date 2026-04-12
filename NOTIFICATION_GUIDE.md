@@ -1,8 +1,8 @@
-# AdherAI - Background Notifications Setup Guide
+# MedReminder - Background Notifications Setup Guide
 
 ## 📱 Background Notification System
 
-Aapke AdherAI app mein ab **complete background notification system** hai jo **app band hone par bhi notifications** bhejta hai!
+Aapke MedReminder app mein ab **complete background notification system** hai jo **app band hone par bhi notifications** bhejta hai!
 
 ---
 

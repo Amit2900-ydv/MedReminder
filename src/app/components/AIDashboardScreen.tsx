@@ -1,234 +1,231 @@
 import { motion } from 'motion/react';
-import { Brain, TrendingUp, AlertCircle, CheckCircle2, Target, Zap, Calendar, Clock } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { weeklyAdherence, adherenceHistory, aiInsights } from '@/app/data/mockData';
+import { Brain, TrendingUp, AlertCircle, CheckCircle2, Target, Zap, Calendar, Clock, Trophy, ShieldCheck, Pill } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell } from 'recharts';
 import { useLanguage } from '@/app/context/LanguageContext';
+import { usePatientContext } from '@/app/context/PatientContext';
+import { useAuth } from '@/app/context/AuthContext';
+import { DrugInteractionChecker } from './DrugInteractionChecker';
 
 export function AIDashboardScreen() {
   const { t } = useLanguage();
-  const predictedAdherence = 94;
-  const riskScore = t('ai.low_risk');
-  const streakDays = 12;
+  const { patients } = usePatientContext();
+  const { user } = useAuth();
+
+  const currentPatient = patients.find(p => p.id === user?.patientId) || patients[0];
+
+  // Adherence Data Transformation for Charts
+  const chartData = [
+    { day: 'Mon', adherence: 85 },
+    { day: 'Tue', adherence: 92 },
+    { day: 'Wed', adherence: 88 },
+    { day: 'Thu', adherence: 100 },
+    { day: 'Fri', adherence: 75 },
+    { day: 'Sat', adherence: 90 },
+    { day: 'Sun', adherence: currentPatient.adherenceScore },
+  ];
+
+  const monthlyData = [
+    { month: 'Jan', score: 82 },
+    { month: 'Feb', score: 85 },
+    { month: 'Mar', score: 88 },
+    { month: 'Apr', score: 92 },
+    { month: 'May', score: 89 },
+    { month: 'Jun', score: currentPatient.adherenceScore },
+  ];
+
+  const streakDays = 7; // In a real app, calculate from logs
 
   return (
-    <div className="pb-24 px-4 pt-6">
+    <div className="pb-24 px-4 pt-6 bg-gray-50/30">
       <div className="mb-6">
-        <h1 className="text-2xl mb-2" style={{ fontWeight: 700 }}>{t('ai.title')}</h1>
-        <p className="text-gray-600">{t('ai.subtitle')}</p>
+        <h1 className="text-3xl font-black bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-indigo-700 mb-2">
+          {t('ai.title')}
+        </h1>
+        <p className="text-gray-500 font-medium">{t('ai.subtitle')}</p>
       </div>
 
-      {/* AI Score Card */}
+      {/* Hero AI Score Card */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        onClick={() => alert('Opening Health Score breakdown...')}
-        className="bg-gradient-to-br from-purple-500 via-blue-600 to-blue-500 rounded-3xl p-6 mb-6 text-white shadow-2xl cursor-pointer hover:scale-[1.01] transition-transform active:scale-[0.99]"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative rounded-[2.5rem] p-8 mb-8 text-white shadow-2xl overflow-hidden group"
       >
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-            <Brain className="w-6 h-6" />
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-blue-600 to-violet-600" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-5 mb-8">
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-md rounded-[1.5rem] flex items-center justify-center border border-white/30 shadow-inner group-hover:rotate-6 transition-transform">
+              <Brain className="w-8 h-8" />
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-white/70 mb-1">{t('ai.health_score')}</p>
+              <h2 className="text-5xl font-black">{currentPatient.adherenceScore}<span className="text-2xl opacity-60 ml-1">/100</span></h2>
+            </div>
           </div>
-          <div>
-            <p className="text-sm opacity-90">{t('ai.health_score')}</p>
-            <p className="text-3xl" style={{ fontWeight: 700 }}>89/100</p>
-          </div>
-        </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-            <p className="text-xs opacity-80 mb-1">{t('ai.adherence')}</p>
-            <p className="text-lg" style={{ fontWeight: 700 }}>92%</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-            <p className="text-xs opacity-80 mb-1">{t('ai.risk_level')}</p>
-            <p className="text-lg" style={{ fontWeight: 700 }}>{riskScore}</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
-            <p className="text-xs opacity-80 mb-1">{t('ai.streak')}</p>
-            <p className="text-lg" style={{ fontWeight: 700 }}>{streakDays}d</p>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Weekly Trends */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="bg-white rounded-3xl p-5 mb-6 shadow-lg border border-gray-100"
-      >
-        <div
-          onClick={() => alert('Detailed trend analysis opened!')}
-          className="flex items-center justify-between mb-4 cursor-pointer hover:bg-gray-50 p-2 rounded-xl transition-colors"
-        >
-          <h3 className="text-lg" style={{ fontWeight: 700 }}>{t('ai.weekly_stats')}</h3>
-          <div className="flex items-center gap-1 text-green-600">
-            <TrendingUp className="w-4 h-4" />
-            <span className="text-sm" style={{ fontWeight: 600 }}>+8%</span>
-          </div>
-        </div>
-
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={weeklyAdherence}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis dataKey="day" tick={{ fontSize: 12 }} stroke="#6B7280" />
-            <YAxis tick={{ fontSize: 12 }} stroke="#6B7280" />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#fff',
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px',
-                fontSize: '12px'
-              }}
-            />
-            <Bar dataKey="adherence" fill="url(#colorGradient)" radius={[8, 8, 0, 0]} />
-            <defs>
-              <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3B82F6" />
-                <stop offset="100%" stopColor="#9333EA" />
-              </linearGradient>
-            </defs>
-          </BarChart>
-        </ResponsiveContainer>
-      </motion.div>
-
-      {/* 6-Month Trend */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="bg-white rounded-3xl p-5 mb-6 shadow-lg border border-gray-100"
-      >
-        <h3 className="text-lg mb-4" style={{ fontWeight: 700 }}>{t('ai.monthly_progress')}</h3>
-
-        <ResponsiveContainer width="100%" height={180}>
-          <LineChart data={adherenceHistory}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-            <XAxis dataKey="month" tick={{ fontSize: 12 }} stroke="#6B7280" />
-            <YAxis tick={{ fontSize: 12 }} stroke="#6B7280" domain={[70, 100]} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#fff',
-                border: '1px solid #E5E7EB',
-                borderRadius: '8px',
-                fontSize: '12px'
-              }}
-            />
-            <Line
-              type="monotone"
-              dataKey="score"
-              stroke="#3B82F6"
-              strokeWidth={3}
-              dot={{ fill: '#3B82F6', r: 4 }}
-              activeDot={{ r: 6 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </motion.div>
-
-      {/* AI Insights */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="mb-6"
-      >
-        <h3 className="text-lg mb-3" style={{ fontWeight: 700 }}>{t('ai.insights')}</h3>
-        <div className="space-y-3">
-          {aiInsights.map((insight) => (
-            <div
-              key={insight.id}
-              onClick={() => alert(`Insight action: ${insight.message.substring(0, 20)}...`)}
-              className={`rounded-2xl p-4 border-2 cursor-pointer hover:scale-[1.02] transition-transform active:scale-[0.98] ${insight.type === 'warning'
-                ? 'bg-amber-50 border-amber-200'
-                : insight.type === 'success'
-                  ? 'bg-green-50 border-green-200'
-                  : 'bg-blue-50 border-blue-200'
-                }`}
-            >
-              <div className="flex gap-3">
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${insight.type === 'warning'
-                  ? 'bg-amber-500'
-                  : insight.type === 'success'
-                    ? 'bg-green-500'
-                    : 'bg-blue-500'
-                  }`}>
-                  {insight.type === 'warning' && <AlertCircle className="w-5 h-5 text-white" />}
-                  {insight.type === 'success' && <CheckCircle2 className="w-5 h-5 text-white" />}
-                  {insight.type === 'info' && <Zap className="w-5 h-5 text-white" />}
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-600 mb-1" style={{ fontWeight: 600 }}>
-                    {new Date(insight.timestamp).toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </p>
-                  <p className="text-sm text-gray-800 leading-relaxed">{t(insight.message)}</p>
-                </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-4 border border-white/10 hover:bg-white/15 transition-colors">
+              <div className="flex items-center gap-2 mb-2">
+                <Trophy className="w-4 h-4 text-amber-400" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">{t('ai.streak')}</span>
               </div>
+              <p className="text-2xl font-black">{streakDays} Days</p>
+              <p className="text-[10px] text-white/60 font-medium">Personal Best: 14d</p>
             </div>
-          ))}
+            <div className="bg-white/10 backdrop-blur-md rounded-3xl p-4 border border-white/10 hover:bg-white/15 transition-colors">
+              <div className="flex items-center gap-2 mb-2">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Reliability</span>
+              </div>
+              <p className="text-2xl font-black">High</p>
+              <p className="text-[10px] text-white/60 font-medium">98.2% Accuracy</p>
+            </div>
+          </div>
         </div>
       </motion.div>
 
-      {/* Predictions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-3xl p-5 border border-purple-100"
-      >
-        <div className="flex items-center gap-2 mb-4">
-          <Target className="w-5 h-5 text-purple-600" />
-          <h3 className="text-lg" style={{ fontWeight: 700 }}>{t('ai.predictions')}</h3>
-        </div>
-
-        <div className="space-y-3">
-          <button
-            onClick={() => alert('Showing detailed next-week predictions...')}
-            className="w-full text-left bg-white rounded-xl p-4 hover:bg-gray-50 transition-colors shadow-sm"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">{t('ai.estimated_adherence')}</span>
-              <span className="text-lg text-purple-600" style={{ fontWeight: 700 }}>{predictedAdherence}%</span>
+      {/* Weekly Visual Analytics */}
+      <div className="grid grid-cols-1 gap-6 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-blue-50/50 border border-gray-100"
+        >
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-xl font-black text-gray-900">{t('ai.weekly_stats')}</h3>
+              <p className="text-xs text-gray-400 font-bold uppercase mt-1 tracking-widest">Performance Matrix</p>
             </div>
-            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"
-                style={{ width: `${predictedAdherence}%` }}
+            <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 rounded-full text-xs font-black">
+              <TrendingUp className="w-3 h-3" />
+              +12.4%
+            </div>
+          </div>
+
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={chartData}>
+              <defs>
+                <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#4F46E5" />
+                  <stop offset="100%" stopColor="#3B82F6" />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+              <XAxis 
+                dataKey="day" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: '#9CA3AF', fontSize: 10, fontWeight: 700 }} 
+                dy={10}
               />
-            </div>
-          </button>
+              <YAxis hide />
+              <Tooltip 
+                cursor={{ fill: 'transparent' }}
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="bg-gray-900 text-white px-3 py-1.5 rounded-xl text-[10px] font-bold shadow-xl">
+                        {payload[0].value}% Adherence
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Bar dataKey="adherence" radius={[10, 10, 10, 10]}>
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.adherence < 80 ? '#F87171' : 'url(#barGradient)'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </motion.div>
 
-          <button
-            onClick={() => alert('Best time analysis detailed view...')}
-            className="w-full text-left bg-white rounded-xl p-4 hover:bg-gray-50 transition-colors shadow-sm"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="w-4 h-4 text-blue-600" />
-              <span className="text-sm" style={{ fontWeight: 600 }}>{t('ai.best_time')}</span>
-            </div>
-            <p className="text-xs text-gray-600">{t('ai.prediction.best_time_desc')}</p>
-          </button>
+        {/* Global Progress Chart */}
+        <motion.div
+           initial={{ opacity: 0, y: 20 }}
+           animate={{ opacity: 1, y: 0 }}
+           className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-blue-50/50 border border-gray-100"
+        >
+           <h3 className="text-xl font-black text-gray-900 mb-8">{t('ai.monthly_progress')}</h3>
+           <ResponsiveContainer width="100%" height={180}>
+             <AreaChart data={monthlyData}>
+               <defs>
+                 <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                   <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.1}/>
+                   <stop offset="95%" stopColor="#4F46E5" stopOpacity={0}/>
+                 </linearGradient>
+               </defs>
+               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+               <XAxis 
+                dataKey="month" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: '#9CA3AF', fontSize: 10, fontWeight: 700 }} 
+               />
+               <Tooltip />
+               <Area 
+                type="monotone" 
+                dataKey="score" 
+                stroke="#4F46E5" 
+                strokeWidth={4} 
+                fillOpacity={1} 
+                fill="url(#areaGradient)" 
+                dot={{ r: 6, fill: '#4F46E5', strokeWidth: 3, stroke: '#FFF' }}
+               />
+             </AreaChart>
+           </ResponsiveContainer>
+        </motion.div>
+      </div>
 
-          <button
-            onClick={() => alert('Opening Goal Center...')}
-            className="w-full text-left bg-white rounded-xl p-4 hover:bg-gray-50 transition-colors shadow-sm"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Calendar className="w-4 h-4 text-green-600" />
-              <span className="text-sm" style={{ fontWeight: 600 }}>{t('ai.prediction.goal')}</span>
+      {/* AI Drug Interaction Tool Integration */}
+      <div className="mb-10">
+        <h3 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+            <ShieldCheck className="w-6 h-6 text-blue-600" />
+            Safety Intelligence
+        </h3>
+        <DrugInteractionChecker />
+      </div>
+
+      {/* AI Predications & Gamification */}
+      <div className="space-y-4 mb-4">
+        <h3 className="text-xl font-black text-gray-900 mb-2 flex items-center gap-2">
+            <Target className="w-6 h-6 text-purple-600" />
+            AI Forecasts
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-gradient-to-br from-purple-50 to-white rounded-3xl p-6 border border-purple-100 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center text-white">
+                        <Zap className="w-5 h-5" />
+                    </div>
+                    <h4 className="font-bold text-gray-900">Pattern Detected</h4>
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed italic">
+                    "You miss your morning Metformin dose mostly on weekends. Try setting a specific Saturday alarm."
+                </p>
             </div>
-            <p className="text-xs text-gray-600">{t('ai.prediction.goal_desc')}</p>
-          </button>
+
+            <div className="bg-gradient-to-br from-blue-50 to-white rounded-3xl p-6 border border-blue-100 shadow-sm">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white">
+                        <Pill className="w-5 h-5" />
+                    </div>
+                    <h4 className="font-bold text-gray-900">Optimization Goal</h4>
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed italic">
+                    "Take Atorvastatin right before bedtime for maximum efficacy based on your sleep patterns."
+                </p>
+            </div>
         </div>
-      </motion.div>
+      </div>
 
-      {/* AI Disclaimer */}
-      <div className="mt-6 bg-blue-50 rounded-2xl p-4 border border-blue-100">
-        <p className="text-xs text-gray-700 leading-relaxed">
-          <span style={{ fontWeight: 600 }}>{t('ai.note')}:</span> {t('ai.disclaimer')}
+      {/* Disclaimer */}
+      <div className="mt-8 pt-8 border-t border-gray-100 text-center">
+        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest leading-relaxed px-10">
+            AdherAI uses medical intelligence for informational purposes. Consult your physician for medical changes.
         </p>
       </div>
     </div>

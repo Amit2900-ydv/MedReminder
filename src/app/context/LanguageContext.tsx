@@ -156,13 +156,12 @@ const translations: Translations = {
     },
 
 
-    // App Header
     'app.name': {
-        English: 'AdherAI',
-        Hindi: 'एडहेयरएआई',
-        Hinglish: 'AdherAI',
-        Marathi: 'एडहेयरएआई',
-        Gujarati: 'એડહેયએઆઈ'
+        English: 'MedReminder',
+        Hindi: 'MedReminder',
+        Hinglish: 'MedReminder',
+        Marathi: 'MedReminder',
+        Gujarati: 'MedReminder'
     },
     'app.tagline': {
         English: 'Voice-First Medication Intelligence',
@@ -417,7 +416,7 @@ const translations: Translations = {
     'settings.support_section': { English: 'SUPPORT & INFO', Hindi: 'समर्थन और जानकारी', Hinglish: 'SUPPORT & INFO', Marathi: 'समर्थन आणि माहिती', Gujarati: 'સપોર્ટ અને માહિતી' },
     'settings.help_center': { English: 'Help Center', Hindi: 'सहायता केंद्र', Hinglish: 'Help Center', Marathi: 'मदत केंद्र', Gujarati: 'સહાયતા કેન્દ્ર' },
     'settings.live_support': { English: 'Live Support Available', Hindi: 'लाइव सहायता उपलब्ध', Hinglish: 'Live Support Available', Marathi: 'थेट मदत उपलब्ध', Gujarati: 'લાઇવ સપોર્ટ ઉપલબ્ધ' },
-    'settings.about': { English: 'About AdherAI', Hindi: 'अधेरएआई (AdherAI) के बारे में', Hinglish: 'About AdherAI', Marathi: 'AdherAI बद्दल', Gujarati: 'AdherAI વિશે' },
+    'settings.about': { English: 'About MedReminder', Hindi: 'MedReminder के बारे में', Hinglish: 'About MedReminder', Marathi: 'MedReminder बद्दल', Gujarati: 'MedReminder વિશે' },
     'settings.logout': { English: 'Log Out', Hindi: 'लॉग आउट', Hinglish: 'Log Out', Marathi: 'लॉग आउट', Gujarati: 'લોગ આઉટ' },
 
     // Common Actions
@@ -534,7 +533,7 @@ const translations: Translations = {
     'settings.audio_disabled_toast': { English: 'Audio Reminders disabled', Hindi: 'ऑडियो रिमाइंडर अक्षम', Hinglish: 'Audio Reminders disabled', Marathi: 'ऑडिओ स्मरणपत्रे अक्षम', Gujarati: 'ઓડિયો રીમાઇન્ડર્સ અક્ષમ' },
     'settings.med_reminders_toast': { English: 'Medication Reminders toggled', Hindi: 'दवा अनुस्मारक टॉगल किया गया', Hinglish: 'Med Reminders toggled', Marathi: 'औषध स्मरणपत्रे टॉगल केली', Gujarati: 'દવા રીમાઇન્ડર્સ ટોગલ કરવામાં આવ્યા' },
     'settings.ai_insights_toast': { English: 'AI Insights toggled', Hindi: 'एआई अंतर्दृष्टि टॉगल की गई', Hinglish: 'AI Insights toggled', Marathi: 'AI अंतर्दृष्टी टॉगल केली', Gujarati: 'AI આંતરદૃષ્ટિ ટોગલ કરવામાં આવી' },
-    'settings.version_toast': { English: 'AdherAI v2.1.0 is the latest version.', Hindi: 'AdherAI v2.1.0 नवीनतम संस्करण है।', Hinglish: 'AdherAI v2.1.0 is the latest version.', Marathi: 'AdherAI v2.1.0 ही नवीनतम आवृत्ती आहे.', Gujarati: 'AdherAI v2.1.0 નવીનતમ સંસ્કરણ છે.' },
+    'settings.version_toast': { English: 'MedReminder v2.1.0 is the latest version.', Hindi: 'MedReminder v2.1.0 नवीनतम संस्करण है।', Hinglish: 'MedReminder v2.1.0 is the latest version.', Marathi: 'MedReminder v2.1.0 ही नवीनतम आवृत्ती आहे.', Gujarati: 'MedReminder v2.1.0 નવીનતમ સંસ્કરણ છે.' },
     'settings.version_label': { English: 'v2.1.0 • System Normal', Hindi: 'v2.1.0 • सिस्टम सामान्य', Hinglish: 'v2.1.0 • System Normal', Marathi: 'v2.1.0 • सिस्टम नॉर्मल', Gujarati: 'v2.1.0 • સિસ્ટમ નોર્મલ' },
     'settings.live_support_toast': { English: 'Connecting you to a support agent...', Hindi: 'आपको सहायता एजेंट से जोड़ रहे हैं...', Hinglish: 'Connecting you to support...', Marathi: 'तुम्हाला सपोर्ट एजंटशी जोडत आहे...', Gujarati: 'તમને સપોર્ટ એજન્ટ સાથે કનેક્ટ કરી રહ્યાં છીએ...' },
     'settings.voice_status_off': { English: 'Disabled', Hindi: 'अक्षम', Hinglish: 'Disabled', Marathi: 'अक्षम', Gujarati: 'અક્ષમ' },
@@ -646,7 +645,7 @@ const translations: Translations = {
     'time.days_ago': { English: '{count}d ago', Hindi: '{count} दिन पहले', Hinglish: '{count}d ago', Marathi: '{count} दिवसांपूर्वी', Gujarati: '{count} દિવસ પહેલા' },
 
     // Login Screen
-    'login.welcome': { English: 'Welcome to AdherAI', Hindi: 'AdherAI में आपका स्वागत है', Hinglish: 'Welcome to AdherAI', Marathi: 'AdherAI मध्ये आपले स्वागत आहे', Gujarati: 'AdherAI માં આપનું સ્વાગત છે' },
+    'login.welcome': { English: 'Welcome to MedReminder', Hindi: 'MedReminder में आपका स्वागत है', Hinglish: 'Welcome to MedReminder', Marathi: 'MedReminder मध्ये आपले स्वागत आहे', Gujarati: 'MedReminder માં આપનું સ્વાગત છે' },
     'login.tagline': { English: 'Your voice-first medication intelligence platform', Hindi: 'आपका वॉयस-फर्स्ट मेडिकेशन इंटेलिजेंस प्लेटफॉर्म', Hinglish: 'Aapka voice-first medication intelligence platform', Marathi: 'तुमचे व्हॉइस-फर्स्ट मेडिकेशन इंटेलिजन्स प्लॅटफॉर्म', Gujarati: 'તમારું વૉઇસ-ફર્સ્ટ મેડિકેશન ઇન્ટેલિजન્સ પ્લેटफॉर्म' },
     'login.sign_in': { English: 'Sign In', Hindi: 'साइन इन करें', Hinglish: 'Sign In', Marathi: 'साइन इन करा', Gujarati: 'સાઇન ઇન કરો' },
     'login.sign_up': { English: 'Sign Up', Hindi: 'साइन अप करें', Hinglish: 'Sign Up', Marathi: 'साइन अप करा', Gujarati: 'સાઇન અપ કરો' },

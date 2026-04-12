@@ -1,6 +1,6 @@
 {
-  "name": "AdherAI - Medication Intelligence",
-  "short_name": "AdherAI",
+  "name": "MedReminder - Medication Intelligence",
+  "short_name": "MedReminder",
   "description": "Voice-first medication intelligence platform for healthcare",
   "start_url": "/",
   "display": "standalone",

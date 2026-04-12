@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Plus, Clock, Trash2, Pill } from 'lucide-react';
+import { X, Plus, Clock, Trash2, Pill, Mic, MicOff, Loader2 } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { Medication } from '@/app/data/mockData';
 import { useLanguage } from '@/app/context/LanguageContext';
@@ -24,6 +24,31 @@ export function AddMedicationModal({ isOpen, onClose, onAdd }: AddMedicationModa
     const [purpose, setPurpose] = useState('');
     const [sideEffects, setSideEffects] = useState<string[]>([]);
     const [newSideEffect, setNewSideEffect] = useState('');
+    const [isListening, setIsListening] = useState(false);
+
+    const startListening = () => {
+        if (!('webkitSpeechRecognition' in window) && !('speechRecognition' in window)) {
+            alert('Voice recognition not supported in this browser.');
+            return;
+        }
+
+        const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).speechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => setIsListening(true);
+        recognition.onend = () => setIsListening(false);
+        recognition.onerror = () => setIsListening(false);
+
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript;
+            setName(transcript.charAt(0).toUpperCase() + transcript.slice(1));
+        };
+
+        recognition.start();
+    };
 
     if (!isOpen) return null;
 
@@ -75,15 +100,26 @@ export function AddMedicationModal({ isOpen, onClose, onAdd }: AddMedicationModa
             content: (
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">{t('addmed.name_label')}</label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-blue-500"
-                            placeholder={t('scan.med_name')}
-                            required
-                        />
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="w-full p-4 pr-12 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:border-blue-500 transition-all font-medium"
+                                placeholder={t('scan.med_name')}
+                                required
+                            />
+                            <button
+                                type="button"
+                                onClick={startListening}
+                                className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-xl transition-all ${isListening
+                                    ? 'bg-red-100 text-red-600 animate-pulse'
+                                    : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                                    }`}
+                            >
+                                {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">{t('addmed.dosage_label')}</label>

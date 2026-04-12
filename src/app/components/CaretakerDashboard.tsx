@@ -15,9 +15,9 @@ export function CaretakerDashboard({ patientIds, caretakerName, onViewPatient }:
     const patients = patientIds.map(id => allPatients.find(p => p.id === id)).filter(Boolean) as Patient[];
 
     // Calculate overall statistics
-    const avgAdherence = Math.round(
-        patients.reduce((sum, p) => sum + p.adherenceScore, 0) / patients.length
-    );
+    const avgAdherence = patients.length > 0
+        ? Math.round(patients.reduce((sum, p) => sum + p.adherenceScore, 0) / patients.length)
+        : 0;
     const totalMissedMeds = patients.reduce((sum, p) => sum + p.missedMedsCount, 0);
     const patientsWithIssues = patients.filter(p => p.adherenceScore < 80 || p.missedMedsCount > 2).length;
 

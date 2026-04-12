@@ -1,17 +1,20 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Patient, Caretaker, Medication, medications, patients as initialPatients, caretakers as initialCaretakers } from '@/app/data/mockData';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { patientApi, caretakerApi, medicationApi, logApi } from '@/services/api';
+import { Patient, Caretaker, Medication, medications as defaultMedications } from '@/app/data/mockData';
+import { useAuth } from './AuthContext';
 
 interface PatientContextType {
     patients: Patient[];
     caretakers: Caretaker[];
-    addPatient: (caretakerId: string | null, patientData: Omit<Patient, 'id' | 'medications' | 'logs' | 'adherenceScore' | 'lastCheckIn' | 'missedMedsCount'> & { id?: string }) => void;
-    addCaretaker: (caretakerId: string, caretakerData: { name: string; email: string; role?: string; phone?: string; avatar?: string }) => void;
-    addMedication: (patientId: string, medication: Omit<Medication, 'id'>) => void;
-    updatePatient: (patientId: string, updates: Partial<Patient>) => void;
-    updateCaretaker: (caretakerId: string, updates: Partial<Caretaker>) => void;
-    deletePatient: (patientId: string, caretakerId: string) => void;
+    isLoadingData: boolean;
+    addPatient: (caretakerId: string | null, patientData: Omit<Patient, 'id' | 'medications' | 'logs' | 'adherenceScore' | 'lastCheckIn' | 'missedMedsCount'> & { id?: string }) => Promise<void>;
+    addCaretaker: (caretakerId: string, caretakerData: { name: string; email: string; role?: string; phone?: string; avatar?: string }) => Promise<void>;
+    addMedication: (patientId: string, medication: Omit<Medication, 'id'>) => Promise<void>;
+    updatePatient: (patientId: string, updates: Partial<Patient>) => Promise<void>;
+    updateCaretaker: (caretakerId: string, updates: Partial<Caretaker>) => Promise<void>;
+    deletePatient: (patientId: string, caretakerId: string) => Promise<void>;
     getPatientsByCaretaker: (caretakerId: string) => Patient[];
-    linkPatientToCaretaker: (patientId: string, caretakerId: string) => { success: boolean; message?: string };
+    linkPatientToCaretaker: (patientId: string, caretakerId: string) => Promise<{ success: boolean; message?: string }>;
     addLog: (patientId: string, logData: {
         medicationId: string;
         medicationName: string;
@@ -20,194 +23,166 @@ interface PatientContextType {
         actualTime?: string;
         verificationMethod?: 'scan' | 'manual' | 'voice';
         date: string;
-    }) => void;
+    }) => Promise<void>;
+    refreshData: () => Promise<void>;
 }
 
 const PatientContext = createContext<PatientContextType | undefined>(undefined);
 
 export function PatientProvider({ children }: { children: ReactNode }) {
-    // Initialize state from localStorage or fallback to mock data
-    const [patients, setPatients] = useState<Patient[]>(() => {
-        try {
-            const saved = localStorage.getItem('patients');
-            const parsed = saved ? JSON.parse(saved) : [];
+    const { user } = useAuth();
+    const [patients, setPatients] = useState<Patient[]>([]);
+    const [caretakers, setCaretakers] = useState<Caretaker[]>([]);
+    const [isLoadingData, setIsLoadingData] = useState(false);
 
-            // Merge initial patients with saved patients, ensuring it's an array
-            const merged = Array.isArray(parsed) ? [...parsed] : [];
-            initialPatients.forEach((initPatient: Patient) => {
-                const existingIndex = merged.findIndex((p: Patient) => p.id === initPatient.id);
-                if (existingIndex === -1) {
-                    merged.push(initPatient);
-                } else {
-                    // Force Demo Medicine to be present for existing patients
-                    // And ensure they have at least some medications if they were empty
-                    if (merged[existingIndex].medications.length === 0) {
-                        merged[existingIndex].medications = [...initPatient.medications];
-                    } else {
-                        initPatient.medications.forEach((med: Medication) => {
-                            const medIndex = merged[existingIndex].medications.findIndex((m: Medication) => m.id === med.id);
-                            if (medIndex === -1) {
-                                merged[existingIndex].medications.push(med);
-                            } else {
-                                // Update existing demo medication with latest mock data (times, names etc)
-                                merged[existingIndex].medications[medIndex] = { ...med };
-                            }
-                        });
-                    }
-                }
-            });
-
-            // Ensure EVERY patient (even those created via signup like "amit") has medications
-            merged.forEach((p: Patient) => {
-                if (!p.medications || p.medications.length === 0) {
-                    p.medications = [...medications];
-                }
-            });
-
-            return merged;
-        } catch (e) {
-            console.error('Failed to load patients from localStorage', e);
-            return initialPatients;
+    // ---------------------------------------------------------------------------
+    // Data fetching – runs whenever the logged-in user changes
+    // ---------------------------------------------------------------------------
+    const fetchData = useCallback(async () => {
+        if (!user) {
+            setPatients([]);
+            setCaretakers([]);
+            return;
         }
-    });
-
-    const [caretakers, setCaretakers] = useState<Caretaker[]>(() => {
+        setIsLoadingData(true);
         try {
-            const saved = localStorage.getItem('caretakers');
-            const parsed = saved ? JSON.parse(saved) : [];
-
-            // Merge initial caretakers with saved caretakers, ensuring it's an array
-            const merged = Array.isArray(parsed) ? [...parsed] : [];
-            initialCaretakers.forEach((initCaretaker: Caretaker) => {
-                if (!merged.some((c: Caretaker) => c.id === initCaretaker.id)) {
-                    merged.push(initCaretaker);
-                }
-            });
-            return merged;
-        } catch (e) {
-            console.error('Failed to load caretakers from localStorage', e);
-            return initialCaretakers;
+            if (user.type === 'caretaker' && user.caretakerId) {
+                const [fetchedPatients, caretaker] = await Promise.all([
+                    patientApi.getByCaretaker(user.caretakerId),
+                    caretakerApi.getOne(user.caretakerId)
+                ]);
+                setPatients(fetchedPatients || []);
+                setCaretakers(caretaker ? [caretaker] : []);
+            } else if (user.type === 'patient' && user.patientId) {
+                const patient = await patientApi.getOne(user.patientId);
+                setPatients(patient ? [patient] : []);
+            }
+        } catch (err) {
+            console.error('Failed to fetch data from backend, falling back to empty state:', err);
+            // Graceful degradation – keep whatever we already had
+        } finally {
+            setIsLoadingData(false);
         }
-    });
+    }, [user]);
 
-    // Save to localStorage whenever patients change
     useEffect(() => {
-        try {
-            localStorage.setItem('patients', JSON.stringify(patients));
-        } catch (e) {
-            console.error('Failed to save patients to localStorage', e);
-        }
-    }, [patients]);
+        fetchData();
+    }, [fetchData]);
 
-    // Save to localStorage whenever caretakers change
-    useEffect(() => {
-        try {
-            localStorage.setItem('caretakers', JSON.stringify(caretakers));
-        } catch (e) {
-            console.error('Failed to save caretakers to localStorage', e);
-        }
-    }, [caretakers]);
+    const refreshData = useCallback(() => fetchData(), [fetchData]);
 
-    const addPatient = (
+    // ---------------------------------------------------------------------------
+    // Mutations
+    // ---------------------------------------------------------------------------
+    const addPatient = async (
         caretakerId: string | null,
-        patientData: Omit<Patient, 'id' | 'medications' | 'logs' | 'adherenceScore' | 'lastCheckIn' | 'missedMedsCount'>
+        patientData: Omit<Patient, 'id' | 'medications' | 'logs' | 'adherenceScore' | 'lastCheckIn' | 'missedMedsCount'> & { id?: string }
     ) => {
-        const newPatient: Patient = {
-            id: patientData.id || `p${Date.now()}`, // Allow passing ID if available
-            ...patientData,
-            medications: [...medications], // Initialize with demo medications
-            logs: [],
-            adherenceScore: 100,
-            lastCheckIn: new Date().toISOString(),
-            missedMedsCount: 0
-        };
+        try {
+            const newPatient = await patientApi.create({
+                ...patientData,
+                caretakerId: caretakerId || undefined
+            });
+            setPatients(prev => {
+                if (prev.some(p => p.id === newPatient.id)) return prev;
+                return [...prev, { ...newPatient, medications: defaultMedications, logs: [] }];
+            });
+            if (caretakerId) {
+                setCaretakers(prev =>
+                    prev.map(c =>
+                        c.id === caretakerId && !c.patientIds.includes(newPatient.id)
+                            ? { ...c, patientIds: [...c.patientIds, newPatient.id] }
+                            : c
+                    )
+                );
+            }
+        } catch (err: any) {
+            console.error('addPatient error:', err?.response?.data?.error || err);
+        }
+    };
 
-        setPatients(prev => {
-            // Check if patient already exists to avoid duplicates
-            if (prev.some(p => p.id === newPatient.id)) return prev;
-            return [...prev, newPatient];
-        });
+    const addCaretaker = async (
+        caretakerId: string,
+        caretakerData: { name: string; email: string; role?: string; phone?: string; avatar?: string }
+    ) => {
+        // Caretaker created on backend during register; just fetch and add locally
+        try {
+            const existing = await caretakerApi.getOne(caretakerId);
+            if (existing) {
+                setCaretakers(prev => prev.some(c => c.id === caretakerId) ? prev : [...prev, existing]);
+            }
+        } catch {
+            // If not found, create a local representation
+            const local: Caretaker = {
+                id: caretakerId,
+                name: caretakerData.name,
+                email: caretakerData.email,
+                role: caretakerData.role || 'Caretaker',
+                phone: caretakerData.phone || '',
+                avatar: caretakerData.avatar || '👤',
+                patientIds: []
+            };
+            setCaretakers(prev => prev.some(c => c.id === caretakerId) ? prev : [...prev, local]);
+        }
+    };
 
-        // Update caretaker's patient list if caretakerId is provided
-        if (caretakerId) {
-            setCaretakers(prev =>
-                prev.map(c =>
-                    c.id === caretakerId
-                        ? { ...c, patientIds: [...c.patientIds, newPatient.id] }
-                        : c
+    const addMedication = async (patientId: string, medication: Omit<Medication, 'id'>) => {
+        try {
+            const result = await medicationApi.add(patientId, medication);
+            const newMed: Medication = result.medication;
+            setPatients(prev =>
+                prev.map(p =>
+                    p.id === patientId ? { ...p, medications: [...p.medications, newMed] } : p
                 )
+            );
+        } catch (err: any) {
+            console.error('addMedication error:', err?.response?.data?.error || err);
+        }
+    };
+
+    const updatePatient = async (patientId: string, updates: Partial<Patient>) => {
+        try {
+            const updated = await patientApi.update(patientId, updates);
+            setPatients(prev =>
+                prev.map(p => p.id === patientId ? { ...p, ...updated } : p)
+            );
+        } catch (err: any) {
+            console.error('updatePatient error:', err?.response?.data?.error || err);
+            // Optimistic update fallback
+            setPatients(prev =>
+                prev.map(p => p.id === patientId ? { ...p, ...updates } : p)
             );
         }
     };
 
-    const addCaretaker = (
-        caretakerId: string,
-        caretakerData: { name: string; email: string; role?: string; phone?: string; avatar?: string }
-    ) => {
-        // Check if caretaker already exists
-        const existingCaretaker = caretakers.find(c => c.id === caretakerId);
-        if (existingCaretaker) {
-            console.log('Caretaker already exists:', caretakerId);
-            return;
+    const updateCaretaker = async (caretakerId: string, updates: Partial<Caretaker>) => {
+        try {
+            const updated = await caretakerApi.update(caretakerId, updates);
+            setCaretakers(prev =>
+                prev.map(c => c.id === caretakerId ? { ...c, ...updated } : c)
+            );
+        } catch (err: any) {
+            console.error('updateCaretaker error:', err?.response?.data?.error || err);
+            setCaretakers(prev =>
+                prev.map(c => c.id === caretakerId ? { ...c, ...updates } : c)
+            );
         }
-
-        const newCaretaker: Caretaker = {
-            id: caretakerId,
-            name: caretakerData.name,
-            email: caretakerData.email,
-            role: caretakerData.role || 'Caretaker',
-            phone: caretakerData.phone || '',
-            avatar: caretakerData.avatar || '👤',
-            patientIds: []
-        };
-
-        setCaretakers(prev => [...prev, newCaretaker]);
-        console.log('Created new caretaker:', newCaretaker);
     };
 
-    const addMedication = (
-        patientId: string,
-        medicationData: Omit<Medication, 'id'>
-    ) => {
-        const newMedication: Medication = {
-            id: `med-${Date.now()}`,
-            ...medicationData
-        };
-
-        setPatients(prev =>
-            prev.map(p =>
-                p.id === patientId
-                    ? { ...p, medications: [...p.medications, newMedication] }
-                    : p
-            )
-        );
-    };
-
-
-    const updatePatient = (patientId: string, updates: Partial<Patient>) => {
-        setPatients(prev =>
-            prev.map(p => (p.id === patientId ? { ...p, ...updates } : p))
-        );
-    };
-
-    const updateCaretaker = (caretakerId: string, updates: Partial<Caretaker>) => {
-        setCaretakers(prev =>
-            prev.map(c => (c.id === caretakerId ? { ...c, ...updates } : c))
-        );
-    };
-
-    const deletePatient = (patientId: string, caretakerId: string) => {
-        // Remove from master patient list
-        setPatients(prev => prev.filter(p => p.id !== patientId));
-
-        // Remove from caretaker's patient list
-        setCaretakers(prev =>
-            prev.map(c =>
-                c.id === caretakerId
-                    ? { ...c, patientIds: c.patientIds.filter(id => id !== patientId) }
-                    : c
-            )
-        );
+    const deletePatient = async (patientId: string, caretakerId: string) => {
+        try {
+            await patientApi.delete(patientId);
+            setPatients(prev => prev.filter(p => p.id !== patientId));
+            setCaretakers(prev =>
+                prev.map(c =>
+                    c.id === caretakerId
+                        ? { ...c, patientIds: c.patientIds.filter((id: string) => id !== patientId) }
+                        : c
+                )
+            );
+        } catch (err: any) {
+            console.error('deletePatient error:', err?.response?.data?.error || err);
+        }
     };
 
     const getPatientsByCaretaker = (caretakerId: string) => {
@@ -216,27 +191,30 @@ export function PatientProvider({ children }: { children: ReactNode }) {
         return patients.filter(p => caretaker.patientIds.includes(p.id));
     };
 
-    const linkPatientToCaretaker = (patientId: string, caretakerId: string) => {
-        const caretaker = caretakers.find(c => c.id === caretakerId);
-        if (!caretaker) {
-            return { success: false, message: 'Caretaker ID not found' };
+    const linkPatientToCaretaker = async (patientId: string, caretakerId: string) => {
+        try {
+            await caretakerApi.linkPatient(caretakerId, patientId);
+            setCaretakers(prev =>
+                prev.map(c =>
+                    c.id === caretakerId && !c.patientIds.includes(patientId)
+                        ? { ...c, patientIds: [...c.patientIds, patientId] }
+                        : c
+                )
+            );
+            // Fetch that patient if not already loaded
+            const alreadyLoaded = patients.some(p => p.id === patientId);
+            if (!alreadyLoaded) {
+                const patient = await patientApi.getOne(patientId);
+                if (patient) setPatients(prev => [...prev, patient]);
+            }
+            return { success: true };
+        } catch (err: any) {
+            const message = err?.response?.data?.error || 'Failed to link patient';
+            return { success: false, message };
         }
-
-        if (caretaker.patientIds.includes(patientId)) {
-            return { success: false, message: 'Already linked to this caretaker' };
-        }
-
-        setCaretakers(prev =>
-            prev.map(c =>
-                c.id === caretakerId
-                    ? { ...c, patientIds: [...c.patientIds, patientId] }
-                    : c
-            )
-        );
-        return { success: true };
     };
 
-    const addLog = (
+    const addLog = async (
         patientId: string,
         logData: {
             medicationId: string;
@@ -248,32 +226,30 @@ export function PatientProvider({ children }: { children: ReactNode }) {
             date: string;
         }
     ) => {
-        setPatients(prev =>
-            prev.map(p => {
-                if (p.id !== patientId) return p;
-
-                const newLogs = [
-                    ...p.logs,
-                    {
-                        id: `log-${Date.now()}`,
-                        ...logData
-                    }
-                ];
-
-                // Calculate Adherence Score
-                // This is a simplified calculation: (Taken / Total Logs) * 100
-                const takenCount = newLogs.filter(l => l.status === 'taken' || l.status === 'verified').length;
-                const totalCount = newLogs.length; // In a real app, this would be total *scheduled* up to now
-                const newScore = totalCount > 0 ? Math.round((takenCount / totalCount) * 100) : 100;
-
-                return {
-                    ...p,
-                    logs: newLogs,
-                    adherenceScore: newScore,
-                    lastCheckIn: new Date().toISOString()
-                };
-            })
-        );
+        try {
+            const result = await logApi.add(patientId, logData);
+            // Backend returns updated patient with recalculated adherence
+            const updatedPatient: Patient = result.patient;
+            setPatients(prev =>
+                prev.map(p => p.id === patientId ? { ...p, ...updatedPatient } : p)
+            );
+        } catch (err: any) {
+            console.error('addLog error:', err?.response?.data?.error || err);
+            // Optimistic local fallback so UI still updates
+            setPatients(prev =>
+                prev.map(p => {
+                    if (p.id !== patientId) return p;
+                    const newLogs = [...p.logs, { id: `log-${Date.now()}`, ...logData }];
+                    const takenCount = newLogs.filter(l => l.status === 'taken' || l.status === 'verified').length;
+                    return {
+                        ...p,
+                        logs: newLogs,
+                        adherenceScore: Math.round((takenCount / newLogs.length) * 100),
+                        lastCheckIn: new Date().toISOString()
+                    };
+                })
+            );
+        }
     };
 
     return (
@@ -281,6 +257,7 @@ export function PatientProvider({ children }: { children: ReactNode }) {
             value={{
                 patients,
                 caretakers,
+                isLoadingData,
                 addPatient,
                 addCaretaker,
                 addMedication,
@@ -289,7 +266,8 @@ export function PatientProvider({ children }: { children: ReactNode }) {
                 deletePatient,
                 getPatientsByCaretaker,
                 linkPatientToCaretaker,
-                addLog
+                addLog,
+                refreshData
             }}
         >
             {children}
@@ -299,8 +277,6 @@ export function PatientProvider({ children }: { children: ReactNode }) {
 
 export function usePatientContext() {
     const context = useContext(PatientContext);
-    if (!context) {
-        throw new Error('usePatientContext must be used within PatientProvider');
-    }
+    if (!context) throw new Error('usePatientContext must be used within PatientProvider');
     return context;
 }

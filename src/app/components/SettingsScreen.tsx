@@ -538,7 +538,7 @@ export function SettingsScreen({ onLogout }: SettingsScreenProps = {}) {
         transition={{ delay: 0.6 }}
         className="mt-6 text-center"
       >
-        <p className="text-xs text-gray-500 mb-1">AdherAI - Voice-First Medication Intelligence</p>
+        <p className="text-xs text-gray-500 mb-1">MedReminder - Voice-First Medication Intelligence</p>
         <p className="text-xs text-gray-400">Made with ❤️ for better health outcomes</p>
       </motion.div>
     </div>

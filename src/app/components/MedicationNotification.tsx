@@ -55,7 +55,7 @@ export function MedicationNotification({
                     <Pill className="w-4 h-4 text-white" />
                   </div>
                   <div>
-                    <p className="text-white text-xs opacity-90">AdherAI Reminder</p>
+                    <p className="text-white text-xs opacity-90">MedReminder</p>
                     <p className="text-white text-xs" style={{ fontWeight: 600 }}>Medication Time</p>
                   </div>
                 </div>

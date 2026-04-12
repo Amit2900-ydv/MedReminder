@@ -1,4 +1,4 @@
-// Mock data for AdherAI application
+// Mock data for MedReminder application
 
 export interface Medication {
   id: string;
@@ -349,8 +349,84 @@ export const patients: Patient[] = [
         verificationMethod: 'manual',
         date: '2026-02-12'
       }
-    ]
-  }
+      ]
+    },
+    {
+      id: 'p4',
+      name: 'Priya Das',
+      email: 'priya@test.com',
+      phone: '+91 98765 43213',
+      age: 45,
+      avatar: '👩‍⚕️',
+      adherenceScore: 98,
+      lastCheckIn: '2026-02-12T10:00:00',
+      missedMedsCount: 0,
+      medications: [medications[4], medications[5]],
+      logs: [
+        {
+          id: 'log-p4-1',
+          medicationId: 'demo-1',
+          medicationName: 'Amoxicillin 500mg',
+          scheduledTime: '18:00',
+          status: 'pending',
+          date: '2026-02-12'
+        }
+      ]
+    },
+    {
+      id: 'p5',
+      name: 'Vikram Singh',
+      email: 'vikram@test.com',
+      phone: '+91 98765 43214',
+      age: 70,
+      avatar: '👴',
+      adherenceScore: 62,
+      lastCheckIn: '2026-02-12T11:00:00',
+      missedMedsCount: 5,
+      medications: [medications[0], medications[1], medications[2]],
+      logs: [
+        {
+          id: 'log-v5-1',
+          medicationId: '1',
+          medicationName: 'Metformin 500mg',
+          scheduledTime: '08:00',
+          status: 'missed',
+          date: '2026-02-12'
+        },
+        {
+          id: 'log-v5-2',
+          medicationId: '2',
+          medicationName: 'Lisinopril 10mg',
+          scheduledTime: '08:00',
+          status: 'missed',
+          date: '2026-02-12'
+        }
+      ]
+    },
+    {
+      id: 'p6',
+      name: 'Anjali Rao',
+      email: 'anjali@test.com',
+      phone: '+91 98765 43215',
+      age: 32,
+      avatar: '👩',
+      adherenceScore: 85,
+      lastCheckIn: '2026-02-12T09:30:00',
+      missedMedsCount: 2,
+      medications: [medications[5], medications[6], medications[7]],
+      logs: [
+        {
+          id: 'log-an-1',
+          medicationId: 'demo-2',
+          medicationName: 'Vitamin D3 2000 IU',
+          scheduledTime: '08:00',
+          actualTime: '08:10',
+          status: 'taken',
+          verificationMethod: 'manual',
+          date: '2026-02-12'
+        }
+      ]
+    }
 ];
 
 // Demo Caretaker Data
@@ -362,7 +438,7 @@ export const caretakers: Caretaker[] = [
     role: 'Primary Care Physician',
     phone: '+91 98765 43210',
     avatar: '👨‍⚕️',
-    patientIds: ['p1', 'p2', 'p3']
+    patientIds: ['p1', 'p2', 'p3', 'p4', 'p5', 'p6']
   }
 ];
 

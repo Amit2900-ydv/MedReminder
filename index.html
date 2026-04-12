@@ -1,15 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="MedReminder" />
+    <meta name="theme-color" content="#3B82F6" />
+    <meta name="description" content="Voice-first medication intelligence platform for healthcare" />
 
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Voice-First AI Assistant Design</title>
-    </head>
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
 
-    <body>
-      <div id="root"></div>
-      <script type="module" src="/src/main.tsx"></script>
-    </body>
-  </html>
-  
+    <!-- Apple Touch Icon (for iPhone home screen) -->
+    <link rel="apple-touch-icon" href="/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512x512.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icon-96x96.png" />
+
+    <title>MedReminder – Medication Intelligence</title>
+
+    <style>
+      /* Prevent pull-to-refresh and overscroll like a native app */
+      html, body {
+        overscroll-behavior: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        touch-action: pan-y;
+      }
+      /* Splash screen on load */
+      #splash {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        transition: opacity 0.5s ease;
+      }
+      #splash.hide { opacity: 0; pointer-events: none; }
+      #splash-logo {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+      #splash-title {
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: white;
+        letter-spacing: 0.05em;
+      }
+      #splash-sub {
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.8);
+        margin-top: 0.5rem;
+      }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Native-style splash screen -->
+    <div id="splash">
+      <div id="splash-logo">💊</div>
+      <div id="splash-title">MedReminder</div>
+      <div id="splash-sub">Medication Intelligence</div>
+    </div>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+
+    <script>
+      // Hide splash after app loads
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const splash = document.getElementById('splash');
+          if (splash) {
+            splash.classList.add('hide');
+            setTimeout(() => splash.remove(), 500);
+          }
+        }, 1200);
+      });
+
+      // Register Service Worker for PWA
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(reg => console.log('✅ SW registered:', reg.scope))
+            .catch(err => console.log('SW skipped:', err.message));
+        });
+      }
+    </script>
+  </body>
+</html>

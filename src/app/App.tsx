@@ -29,7 +29,8 @@ import { CaretakerReportsScreen } from '@/app/components/CaretakerReportsScreen'
 import { CaretakerSettingsScreen } from '@/app/components/CaretakerSettingsScreen';
 import { CaretakerPatientsScreen } from '@/app/components/CaretakerPatientsScreen';
 import { Button } from '@/app/components/ui/button';
-import { Bell, Menu, User } from 'lucide-react';
+import { Bell, Menu, User, AlertCircle } from 'lucide-react';
+import { SOSButton } from '@/app/components/SOSButton';
 import { User as UserType, Patient, Medication } from '@/app/data/mockData';
 import { usePatientContext } from '@/app/context/PatientContext';
 import { useAuth } from '@/app/context/AuthContext';
@@ -48,7 +49,7 @@ interface NotificationData {
 }
 
 function App() {
-  const { patients, caretakers, addCaretaker, linkPatientToCaretaker } = usePatientContext();
+  const { patients, caretakers, addCaretaker } = usePatientContext();
   const { user: currentUser, isLoading } = useAuth();
   const [currentScreen, setCurrentScreen] = useState<Screen>('login');
   const [hasCompletedIntro, setHasCompletedIntro] = useState(() => {
@@ -239,24 +240,11 @@ function App() {
       if (!caretaker) {
         console.log('Creating missing caretaker profile for:', currentUser.caretakerId);
         caretakerCreatedRef.current.add(currentUser.caretakerId);
+        // Fetch from backend — profile created during registration
         addCaretaker(currentUser.caretakerId, {
-          name: currentUser.email.split('@')[0],
+          name: currentUser.name || currentUser.email.split('@')[0],
           email: currentUser.email,
           role: 'Caretaker'
-        });
-
-        // Link demo patients so the dashboard isn't empty
-        setTimeout(() => {
-          ['p1', 'p2', 'p3'].forEach(pid => {
-            linkPatientToCaretaker(pid, currentUser.caretakerId!);
-          });
-        }, 500);
-      } else if (caretaker.patientIds.length === 0) {
-        // If caretaker exists but has no patients (common after fresh signup), link demo patients
-        console.log('Linking demo patients to existing caretaker profile:', currentUser.caretakerId);
-        caretakerCreatedRef.current.add(currentUser.caretakerId);
-        ['p1', 'p2', 'p3'].forEach(pid => {
-          linkPatientToCaretaker(pid, currentUser.caretakerId!);
         });
       }
     }
@@ -424,7 +412,7 @@ function App() {
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full mb-4"
           />
-          <p className="text-gray-500 font-medium animate-pulse">Launching AdherAI...</p>
+          <p className="text-gray-500 font-medium animate-pulse">Launching MedReminder...</p>
         </div>
       );
     }
@@ -842,6 +830,13 @@ function App() {
               }
             }}
           />
+        )}
+
+        {/* Floating SOS Button for Patients */}
+        {isAuthenticated && currentUser?.type === 'patient' && currentScreen !== 'login' && currentScreen !== 'ai-assistant' && (
+          <div className="fixed bottom-24 left-6 z-[60]">
+            <SOSButton />
+          </div>
         )}
 
         {/* Floating AI Orb - Only show after AI intro and not on AI screen */}
